@@ -1,7 +1,11 @@
 import os
+
+# Debe ir ANTES de importar src.main, porque main.py necesita esta variable
+os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+
 import unittest
 from unittest.mock import patch
-from main import app  # ajusta si tu instancia de Flask se llama distinto
+from src.main import app
 
 
 class TestBlacklistGetRoute(unittest.TestCase):
@@ -9,6 +13,7 @@ class TestBlacklistGetRoute(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
         os.environ['BEARER_TOKEN'] = 'test-token-123'
+
 
     def test_get_sin_token_retorna_401(self):
         response = self.client.get('/blacklists/alguien@test.com')
@@ -29,7 +34,7 @@ class TestBlacklistGetRoute(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 401)
 
-    @patch('src.routes.blacklist_routes.blacklist_service.check_blacklist')
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
     def test_get_email_no_blacklisted_con_token_valido(self, mock_check):
         mock_check.return_value = {
             "is_blacklisted": False,
@@ -47,7 +52,7 @@ class TestBlacklistGetRoute(unittest.TestCase):
         self.assertFalse(data['is_blacklisted'])
         self.assertEqual(data['email'], 'bueno@test.com')
 
-    @patch('src.routes.blacklist_routes.blacklist_service.check_blacklist')
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
     def test_get_email_blacklisted_con_token_valido(self, mock_check):
         mock_check.return_value = {
             "is_blacklisted": True,
