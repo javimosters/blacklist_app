@@ -26,6 +26,14 @@ class TestBlacklistRepositoryGet(unittest.TestCase):
         self.assertTrue(result)
 
     @patch('src.repositories.blacklist_repository.db')
+    def test_get_by_email_no_encontrado(self, mock_db):
+        mock_db.session.query.return_value.filter.return_value.first.return_value = None
+
+        result = self.repository.get_by_email("noexiste@test.com")
+
+        self.assertIsNone(result)
+
+    @patch('src.repositories.blacklist_repository.db')
     def test_exists_by_email_false(self, mock_db):
         mock_db.session.query.return_value.filter.return_value.first.return_value = None
 
