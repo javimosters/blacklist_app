@@ -85,6 +85,64 @@ class TestBlacklistGetRoute(unittest.TestCase):
         self.assertTrue(data['is_blacklisted'])
         self.assertEqual(data['blocked_reason'], 'Spam activity')
 
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
+    def test_get_email_blacklisted_retorna_datos_completos(self, mock_check):
+        mock_check.return_value = {
+            "is_blacklisted": True,
+            "email": "malo@test.com",
+            "blocked_reason": "Spam activity"
+        }
+
+        response = self.client.get(
+            '/blacklists/malo@test.com',
+            headers={'Authorization': 'Bearer test-token-123'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+
+        self.assertTrue(data["is_blacklisted"])
+        self.assertEqual(data["email"], "malo@test.com")
+        self.assertEqual(data["blocked_reason"], "Spam activity")
+
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
+    def test_get_email_no_blacklisted_retorna_sin_motivo(self, mock_check):
+        mock_check.return_value = {
+            "is_blacklisted": False,
+            "email": "bueno@test.com",
+            "blocked_reason": None
+        }
+
+        response = self.client.get(
+            '/blacklists/bueno@test.com',
+            headers={'Authorization': 'Bearer test-token-123'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+
+        self.assertFalse(data["is_blacklisted"])
+        self.assertEqual(data["email"], "bueno@test.com")
+        self.assertIsNone(data["blocked_reason"])
+
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
+    def test_get_retorna_respuesta_json(self, mock_check):
+        mock_check.return_value = {
+            "is_blacklisted": False,
+            "email": "bueno@test.com",
+            "blocked_reason": None
+        }
+
+        response = self.client.get(
+            '/blacklists/bueno@test.com',
+            headers={'Authorization': 'Bearer test-token-123'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.get_json())
+
 
 if __name__ == '__main__':
     unittest.main()
