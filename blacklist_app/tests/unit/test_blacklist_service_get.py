@@ -29,6 +29,32 @@ class TestCheckBlacklist(unittest.TestCase):
         self.assertEqual(result["email"], "bueno@test.com")
         self.assertIsNone(result["blocked_reason"])
 
+    def test_check_blacklist_consulta_email_correcto(self):
+        self.service.repository.get_by_email.return_value = None
+
+        self.service.check_blacklist("consulta@test.com")
+
+        self.service.repository.get_by_email.assert_called_once_with(
+            "consulta@test.com"
+        )
+
+    def test_check_blacklist_retorna_motivo_correcto(self):
+        mock_blacklist = MagicMock()
+        mock_blacklist.blocked_reason = "Fraud activity"
+
+        self.service.repository.get_by_email.return_value = mock_blacklist
+
+        result = self.service.check_blacklist("fraude@test.com")
+
+        self.assertEqual(result["blocked_reason"], "Fraud activity")
+
+    def test_check_blacklist_retorna_email_consultado(self):
+        self.service.repository.get_by_email.return_value = None
+
+        result = self.service.check_blacklist("usuario@test.com")
+
+        self.assertEqual(result["email"], "usuario@test.com")
+
 
 if __name__ == '__main__':
     unittest.main()
