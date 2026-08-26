@@ -70,22 +70,6 @@ class BlacklistService:
                 "email": email,
                 "blocked_reason": None
             }
+
+
         
-def add_to_blacklist(self, email, app_id, reason=None, ip_address=None):
-    blacklist_data = {
-        "email": email,
-        "app_id": app_id,
-        "blocked_reason": reason,
-        "ip_address": ip_address,
-    }
-
-    created = self.repository.create(blacklist_data)
-
-    return {
-        "success": True,
-        "email": created.email,
-    }
-
-            
-            
-
