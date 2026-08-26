@@ -2,12 +2,10 @@ import os
 import pytest
 
 # Aseguramos que estas variables existan ANTES de importar la app,
-# porque src/main.py las lee apenas se importa (init_db, create_tables).
-# Si ya tienen un .env con estos valores, estas líneas no hacen nada (setdefault).
-os.environ.setdefault(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5433/blacklist_db"
-)
+# porque src/main.py las lee apenas se importa (init_db, create_tables
+# hace db.create_all() de inmediato). Usamos SQLite en memoria para que
+# las pruebas NO necesiten Docker ni Postgres corriendo.
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ.setdefault("BEARER_TOKEN", "test-token-123")
 
 from src.main import app as flask_app  # noqa: E402
