@@ -14,7 +14,6 @@ class TestBlacklistGetRoute(unittest.TestCase):
         self.client = app.test_client()
         os.environ['BEARER_TOKEN'] = 'test-token-123'
 
-
     def test_get_sin_token_retorna_401(self):
         response = self.client.get('/blacklists/alguien@test.com')
         self.assertEqual(response.status_code, 401)
@@ -33,6 +32,22 @@ class TestBlacklistGetRoute(unittest.TestCase):
             headers={'Authorization': 'Bearer token-incorrecto'}
         )
         self.assertEqual(response.status_code, 401)
+
+    @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
+    def test_get_llama_service_con_email_correcto(self, mock_check):
+        mock_check.return_value = {
+            "is_blacklisted": False,
+            "email": "prueba@test.com",
+            "blocked_reason": None
+        }
+
+        response = self.client.get(
+            '/blacklists/prueba@test.com',
+            headers={'Authorization': 'Bearer test-token-123'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mock_check.assert_called_once_with("prueba@test.com")
 
     @patch('src.routes.blacklist_router.blacklist_service.check_blacklist')
     def test_get_email_no_blacklisted_con_token_valido(self, mock_check):
