@@ -1,0 +1,19 @@
+$kind: http-request
+description: Consulta un email que nunca se ha registrado; debe reportar is_blacklisted = false.
+url: "{{base_url}}/blacklists/no.existe.{{$timestamp}}@example.com"
+method: GET
+headers:
+  Authorization: Bearer {{bearer_token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code es 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('El email no está en la blacklist', function () {
+          const body = pm.response.json();
+          pm.expect(body.is_blacklisted).to.eql(false);
+      });
+    language: text/javascript
+order: 4000

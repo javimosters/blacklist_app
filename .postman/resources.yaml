@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: 5588fc72-b845-4c42-890a-b6c6a054b377
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/blacklist_app - blacklist_email: b1a1c2d4-2f2f-4a5b-9e60-1a4c1f9c2b10
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

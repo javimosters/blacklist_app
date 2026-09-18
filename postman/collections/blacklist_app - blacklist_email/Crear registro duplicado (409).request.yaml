@@ -1,0 +1,23 @@
+$kind: http-request
+description: Vuelve a intentar crear el mismo email creado antes; el servicio debe rechazarlo con 409.
+url: "{{base_url}}/blacklists"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{bearer_token}}
+body:
+  type: text
+  content: |-
+    {
+        "email": "{{test_email}}",
+        "app_uuid": "{{test_app_uuid}}",
+        "blocked_reason": "Intento de duplicado"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code es 409 por email duplicado', function () {
+          pm.response.to.have.status(409);
+      });
+    language: text/javascript
+order: 5000

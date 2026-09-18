@@ -1,0 +1,37 @@
+$kind: http-request
+description: Crea un nuevo registro de email en la blacklist. Requiere Bearer token.
+url: "{{base_url}}/blacklists"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{bearer_token}}
+body:
+  type: text
+  content: |-
+    {
+        "email": "{{test_email}}",
+        "app_uuid": "{{test_app_uuid}}",
+        "blocked_reason": "Prueba automatizada de integración (newman)"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Genera un email único en cada corrida para evitar el 409 por duplicado
+      const emailUnico = `qa.newman.${Date.now()}@example.com`;
+      pm.collectionVariables.set('test_email', emailUnico);
+      pm.collectionVariables.set('test_app_uuid', pm.variables.replaceIn('{{$guid}}'));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status code es 201', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('La respuesta trae id, email y created_at', function () {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property('id');
+          pm.expect(body).to.have.property('email', pm.collectionVariables.get('test_email'));
+          pm.expect(body).to.have.property('created_at');
+      });
+    language: text/javascript
+order: 2000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: Verifica que el servicio esté levantado y respondiendo.
+url: "{{base_url}}/blacklists/ping"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code es 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Responde pong', function () {
+          const body = pm.response.json();
+          pm.expect(body.message).to.eql('pong');
+      });
+    language: text/javascript
+order: 1000

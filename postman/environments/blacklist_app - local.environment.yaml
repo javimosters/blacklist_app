@@ -1,0 +1,6 @@
+name: blacklist_app - local
+values:
+  - key: base_url
+    value: 'http://localhost:5001'
+  - key: bearer_token
+    value: test-token-123

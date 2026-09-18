@@ -1,0 +1,14 @@
+$kind: collection
+description: |-
+  Colección de pruebas para el microservicio de blacklist global de emails (blacklist_app).
+
+  Cubre:
+  - Health check del servicio
+  - Creación de un registro en la blacklist (POST /blacklists)
+  - Consulta de un email en la blacklist (GET /blacklists/<email>)
+  - Casos negativos: sin token, email inválido y duplicado
+
+  Repositorio: https://github.com/javimosters/blacklist_app
+variables:
+  test_email: ""
+  test_app_uuid: ""

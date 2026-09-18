@@ -1,0 +1,20 @@
+$kind: http-request
+description: Consulta el email creado en el paso anterior; debe reportar is_blacklisted = true.
+url: "{{base_url}}/blacklists/{{test_email}}"
+method: GET
+headers:
+  Authorization: Bearer {{bearer_token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code es 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('El email consultado está en la blacklist', function () {
+          const body = pm.response.json();
+          pm.expect(body.is_blacklisted).to.eql(true);
+          pm.expect(body.email).to.eql(pm.collectionVariables.get('test_email'));
+      });
+    language: text/javascript
+order: 3000

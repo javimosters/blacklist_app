@@ -1,0 +1,57 @@
+name: Pruebas de integración
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  pruebas_integracion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar Newman
+        run: npm install -g newman
+
+      - name: Crear archivo .env
+        working-directory: ./blacklist_app
+        run: |
+          echo "BEARER_TOKEN=${{ secrets.BEARER_TOKEN }}" > .env
+
+      - name: Levantar aplicación y base de datos
+        working-directory: ./blacklist_app
+        run: docker compose up -d --build
+
+      - name: Esperar a que la API esté disponible
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5001/blacklists/ping; then
+              echo "API disponible"
+              exit 0
+            fi
+            echo "Esperando la API..."
+            sleep 2
+          done
+          echo "La API no estuvo disponible"
+          docker compose -f ./blacklist_app/docker-compose.yml logs
+          exit 1
+
+      - name: Ejecutar colección de Postman con Newman
+        run: newman run "./postman/Blacklist_API.postman_collection.json"
+
+      - name: Mostrar logs si ocurre un error
+        if: failure()
+        run: docker compose -f ./blacklist_app/docker-compose.yml logs
+
+      - name: Detener servicios
+        if: always()
+        run: docker compose -f ./blacklist_app/docker-compose.yml down
