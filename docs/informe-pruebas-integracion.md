@@ -54,7 +54,9 @@ curl http://localhost:5001/blacklists/ping
 
 # 4. Desde la raíz del repositorio, ejecutar la colección
 cd ..
-newman run "./postman/Blacklist_API.postman_collection.json"
+newman run "./postman/Blacklist_API.postman_collection.json" \
+  --env-var "base_url=http://localhost:5001" \
+  --env-var "bearer_token=test-token-123"
 ```
 
 Newman corre las 6 requests en orden, imprime en consola el resultado de cada `pm.test` y retorna código de salida distinto de cero si alguna aserción falla — esto es lo que permite usarlo como *gate* en CI.
@@ -76,7 +78,7 @@ Se agregó el workflow `.github/workflows/pruebas_integracion.yml` con el job `p
 
 El job corre automáticamente en cada `push` y `pull_request` hacia `master`.
 
-**Importante:** para que el job funcione, hay que crear el secret `BEARER_TOKEN` en el repositorio (`Settings → Secrets and variables → Actions → New repository secret`) con el mismo valor que está escrito en la autenticación Bearer de la colección de Postman. Si no coincide, las requests que requieren autenticación fallarán con `401` en vez del código esperado.
+**Importante:** la colección de Postman usa dos variables que no vienen definidas en el archivo (`{{base_url}}` y `{{bearer_token}}`), así que hay que pasarlas al ejecutar Newman con `--env-var`. Para que el job de GitHub Actions funcione, además hay que crear el secret `BEARER_TOKEN` en el repositorio (`Settings → Secrets and variables → Actions → New repository secret`) con el mismo valor que tiene `BEARER_TOKEN` en el `.env` del servicio (por ejemplo `test-token-123`). Si no coincide, las requests que requieren autenticación fallarán con `401` en vez del código esperado.
 
 ## 4. Estructura de archivos agregados al repositorio
 

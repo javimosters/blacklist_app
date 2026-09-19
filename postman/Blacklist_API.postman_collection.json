@@ -1,0 +1,302 @@
+{
+	"info": {
+		"_postman_id": "b1a1c2d4-2f2f-4a5b-9e60-1a4c1f9c2b10",
+		"name": "blacklist_app - blacklist_email",
+		"description": "Colección de pruebas para el microservicio de blacklist global de emails (blacklist_app).\n\nCubre:\n- Health check del servicio\n- Creación de un registro en la blacklist (POST /blacklists)\n- Consulta de un email en la blacklist (GET /blacklists/<email>)\n- Casos negativos: sin token, email inválido y duplicado\n\nRepositorio: https://github.com/javimosters/blacklist_app",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check - Ping",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Responde pong', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.message).to.eql('pong');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/blacklists/ping",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists", "ping"]
+				},
+				"description": "Verifica que el servicio esté levantado y respondiendo."
+			},
+			"response": []
+		},
+		{
+			"name": "Crear registro en blacklist",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Genera un email único en cada corrida para evitar el 409 por duplicado",
+							"const emailUnico = `qa.newman.${Date.now()}@example.com`;",
+							"pm.collectionVariables.set('test_email', emailUnico);",
+							"pm.collectionVariables.set('test_app_uuid', pm.variables.replaceIn('{{$guid}}'));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 201', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('La respuesta trae id, email y created_at', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body).to.have.property('id');",
+							"    pm.expect(body).to.have.property('email', pm.collectionVariables.get('test_email'));",
+							"    pm.expect(body).to.have.property('created_at');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{test_email}}\",\n    \"app_uuid\": \"{{test_app_uuid}}\",\n    \"blocked_reason\": \"Prueba automatizada de integración (newman)\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/blacklists",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists"]
+				},
+				"description": "Crea un nuevo registro de email en la blacklist. Requiere Bearer token."
+			},
+			"response": []
+		},
+		{
+			"name": "Consultar email recién creado",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('El email consultado está en la blacklist', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.is_blacklisted).to.eql(true);",
+							"    pm.expect(body.email).to.eql(pm.collectionVariables.get('test_email'));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/blacklists/{{test_email}}",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists", "{{test_email}}"]
+				},
+				"description": "Consulta el email creado en el paso anterior; debe reportar is_blacklisted = true."
+			},
+			"response": []
+		},
+		{
+			"name": "Consultar email inexistente",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('El email no está en la blacklist', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.is_blacklisted).to.eql(false);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/blacklists/no.existe.{{$timestamp}}@example.com",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists", "no.existe.{{$timestamp}}@example.com"]
+				},
+				"description": "Consulta un email que nunca se ha registrado; debe reportar is_blacklisted = false."
+			},
+			"response": []
+		},
+		{
+			"name": "Crear registro duplicado (409)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 409 por email duplicado', function () {",
+							"    pm.response.to.have.status(409);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{test_email}}\",\n    \"app_uuid\": \"{{test_app_uuid}}\",\n    \"blocked_reason\": \"Intento de duplicado\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/blacklists",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists"]
+				},
+				"description": "Vuelve a intentar crear el mismo email creado antes; el servicio debe rechazarlo con 409."
+			},
+			"response": []
+		},
+		{
+			"name": "Crear registro sin token (401)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 401 sin Authorization', function () {",
+							"    pm.response.to.have.status(401);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"sin.token@example.com\",\n    \"app_uuid\": \"{{test_app_uuid}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/blacklists",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists"]
+				},
+				"description": "Intenta crear un registro sin el header Authorization; debe responder 401."
+			},
+			"response": []
+		},
+		{
+			"name": "Crear registro con email inválido (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code es 400 por email inválido', function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"esto-no-es-un-email\",\n    \"app_uuid\": \"{{test_app_uuid}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/blacklists",
+					"host": ["{{base_url}}"],
+					"path": ["blacklists"]
+				},
+				"description": "Envía un email con formato inválido; el schema de Marshmallow debe rechazarlo con 400."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "test_email",
+			"value": ""
+		},
+		{
+			"key": "test_app_uuid",
+			"value": ""
+		}
+	]
+}
